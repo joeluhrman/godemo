@@ -1,33 +1,70 @@
-// Joe Luhrman
-// Dr. Binkley
-// CS 451
-// Pet demo draft 3/17/2022
-// Mainly focussed on showing off goroutines
+/*
+ Joe Luhrman
+ Dr. Binkley
+ CS 451
+ Pet demo 3/17/2022
+ Mainly focussed on showing off goroutines
+ Generates and calculates the average of multiple int arrays using Goroutines
+*/
 
 package main
 
 import (
 	"fmt"
-	"time"
+	"math/rand"
 )
 
-func add(a int, b int) int {
-	return a + b
+const N = 10 // compiler will infer int
+const LEN = 5
+
+func main() { // curly brace must be on this line
+	var arrays [N][LEN]int
+	var avgs [N]float32
+
+	for i := 0; i < N; i++ {
+		data := make(chan [LEN]int)             // channel for int arrays
+		go func() { data <- generateArray() }() // goroutine to generate each array concurrently
+		arrays[i] = <-data
+	}
+
+	for i := 0; i < N; i++ {
+		data := make(chan float32)                 // channel for floats
+		go func() { data <- average(arrays[i]) }() // goroutine to calculate each average concurrently
+		avgs[i] = <-data
+	}
+
+	fmt.Println("Arrays: ")
+	for i := 0; i < N; i++ {
+		fmt.Println("Array ", i, ": ", arrays[i])
+	}
+
+	fmt.Println("Averages: ")
+	for i := 0; i < N; i++ {
+		fmt.Println("Array ", i, ": ", avgs[i])
+	}
 }
 
-func display(a int) {
-	time.Sleep(1 * time.Second)
-	fmt.Println(a)
+// Generates an array of length LEN of ints from 0-10
+func generateArray() [LEN]int {
+	var arr [LEN]int
+
+	for i := 0; i < LEN; i++ {
+		arr[i] = rand.Intn(11) // generates ints from 0-10
+	}
+
+	return arr
 }
 
-func main() {
-	a := 5
-	b := 7
-	c := 10
-	d := 9
+// Calculates the average of an int array of length LEN
+func average(arr [LEN]int) float32 {
+	var average float32
+	sum := 0
 
-	go fmt.Println(add(a, b))
+	for i := 0; i < LEN; i++ {
+		sum += arr[i]
+	}
 
-	display(add(c, d))
+	average = float32(sum) / float32(LEN)
 
+	return average
 }
